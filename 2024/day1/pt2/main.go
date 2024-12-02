@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-// Advent of Code 2024 - Day 1 - Part 1
+// Advent of Code 2024 - Day 1 - Part 2
 func ReadLines(path string) ([]string, error) {
 	file, err := os.Open(path)
 	if err != nil {
@@ -27,7 +27,7 @@ func ReadLines(path string) ([]string, error) {
 
 func main() {
 	// Read day1/input.txt & split it by new line
-	lines, err := ReadLines("../input/day1.txt")
+	lines, err := ReadLines("../../input/day1.txt")
 	if err != nil {
 		panic(err)
 	}
@@ -64,25 +64,38 @@ func main() {
 	rightGroupCount := len(rightGroup)
 	fmt.Println("Right Group Count: ", rightGroupCount)
 
-	differenceGroup := make([]int, 0)
-	// Loop through groups, compare left and right for each index and set the difference group
-	for i := 0; i < leftGroupCount; i++ {
-		left := leftGroup[i]
-		right := rightGroup[i]
+	similarityScoreMap := make(map[int]int)
+	similarityScoreGroup := make([]int, 0)
 
-		diff := right - left
-
-		if diff < 0 {
-			diff = diff * -1
+	// Calculate the similarity score for each unique number in the left group with the right group
+	for _, leftNum := range leftGroup {
+		// Check if the leftNum is already in the similarityScoreMap
+		if _, ok := similarityScoreMap[leftNum]; ok {
+			continue
 		}
 
-		differenceGroup = append(differenceGroup, diff)
+		// Count the number of times the leftNum appears in the right group
+		rightNumCount := 0
+		for _, num := range rightGroup {
+			if leftNum == num {
+				rightNumCount++
+			}
+		}
+
+		// Calculate the similarity score
+		similarityScore := rightNumCount * leftNum
+		similarityScoreMap[leftNum] = similarityScore
 	}
 
-	// Sum the difference group
+	// Loop through leftGroup and get the similarity score for each number
+	for _, num := range leftGroup {
+		similarityScoreGroup = append(similarityScoreGroup, similarityScoreMap[num])
+	}
+
+	// Sum the similarityScore group
 	sum := 0
-	for _, diff := range differenceGroup {
-		sum += diff
+	for _, score := range similarityScoreGroup {
+		sum += score
 	}
 
 	fmt.Println("Sum: ", sum)

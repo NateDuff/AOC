@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-// Advent of Code 2024 - Day 1 - Part 2
+// Advent of Code 2024 - Day 2 - Part 2
 func ReadLines(path string) ([]string, error) {
 	file, err := os.Open(path)
 	if err != nil {
@@ -26,7 +26,7 @@ func ReadLines(path string) ([]string, error) {
 
 func main() {
 	// Read day1/input.txt & split it by new line
-	lines, err := ReadLines("../input/day2.txt")
+	lines, err := ReadLines("../../input/day2.txt")
 	if err != nil {
 		panic(err)
 	}

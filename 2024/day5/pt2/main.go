@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -24,38 +25,73 @@ func ReadLines(path string) ([]string, error) {
 	return lines, scanner.Err()
 }
 
-func fixLine(line string, rules map[int][]int) string {
+func fixLineUntilCorrect(line string, rules []string) string {
 	fixedLine := line
+	previousLine := ""
 
-	for firstNum, secondNums := range rules {
-		chunks := strings.Split(line, ",")
-
-		firstIndex := -1
-
-		for i, chunk := range chunks {
-			if chunk == strconv.Itoa(firstNum) {
-				firstIndex = i
-			}
-		}
-
-		if firstIndex == -1 {
-			continue
-		}
-
-		for _, secondNum := range secondNums {
-			for i := range chunks {
-				if i > firstIndex && chunks[i] == strconv.Itoa(secondNum) {
-					chunks[firstIndex] = strconv.Itoa(secondNum)
-					chunks[i] = strconv.Itoa(firstNum)
-					break
-				}
-			}
-		}
-
-		fixedLine = strings.Join(chunks, ",")
+	for fixedLine != previousLine {
+		previousLine = fixedLine
+		fixedLine = fixLine(fixedLine, rules)
 	}
 
 	return fixedLine
+}
+
+func fixLineUntilCheckRulesPasses(line string, rules []string, ruleSets map[int][]int) string {
+	fixedLine := line
+	previousLine := ""
+
+	for !checkRules(fixedLine, ruleSets) {
+		previousLine = fixedLine
+		fixedLine = fixLine(fixedLine, rules)
+		if fixedLine == previousLine {
+			break
+		}
+	}
+
+	return fixedLine
+}
+
+func fixLine(line string, rules []string) string {
+	chunks := strings.Split(line, ",")
+	for _, rule := range rules {
+		ruleParts := strings.Split(rule, "|")
+		firstNum, err := strconv.Atoi(ruleParts[0])
+		if err != nil {
+			panic(err)
+		}
+
+		secondNum, err := strconv.Atoi(ruleParts[1])
+		if err != nil {
+			panic(err)
+		}
+
+		firstIndex := findIndex(chunks, firstNum)
+		if firstIndex == -1 {
+			continue
+		}
+		chunks = swapChunks(chunks, firstIndex, secondNum)
+	}
+	return strings.Join(chunks, ",")
+}
+
+func findIndex(chunks []string, num int) int {
+	for i, chunk := range chunks {
+		if chunk == strconv.Itoa(num) {
+			return i
+		}
+	}
+	return -1
+}
+
+func swapChunks(chunks []string, firstIndex int, secondNum int) []string {
+	for i := range chunks {
+		if i > firstIndex && chunks[i] == strconv.Itoa(secondNum) {
+			chunks[firstIndex], chunks[i] = chunks[i], chunks[firstIndex]
+		}
+	}
+
+	return chunks
 }
 
 func checkRules(line string, rules map[int][]int) bool {
@@ -95,17 +131,72 @@ func getCenterNumber(line string) int {
 	return centerNum
 }
 
-func main() {
-	// Part 1 - get rules
-	rules, err := ReadLines("../../input/day5-a.txt")
-	if err != nil {
-		panic(err)
+func less(nums []int) func(i, j int) bool {
+	return func(i, j int) bool {
+		return nums[i] > nums[j]
+	}
+}
+
+func contains(nums []int, num int) bool {
+	for _, n := range nums {
+		if n == num {
+			return true
+		}
 	}
 
-	ruleSets := make(map[int][]int)
+	return false
+}
+
+func getOrderedRules(rules []string) []string {
+	firstNumsList := make([]int, 0)
 
 	for _, rule := range rules {
-		// split on | to get the two parts
+		parts := strings.Split(rule, "|")
+
+		firstNum, err := strconv.Atoi(parts[0])
+		if err != nil {
+			panic(err)
+		}
+		// secondNum, err := strconv.Atoi(parts[1])
+		// if err != nil {
+		// 	panic(err)
+		// }
+
+		if !contains(firstNumsList, firstNum) {
+			firstNumsList = append(firstNumsList, firstNum)
+		}
+	}
+
+	orderedRules := make([]string, 0)
+
+	sort.Slice(firstNumsList, less(firstNumsList))
+
+	for _, num := range firstNumsList {
+		for _, rule := range rules {
+			parts := strings.Split(rule, "|")
+
+			firstNum, err := strconv.Atoi(parts[0])
+			if err != nil {
+				panic(err)
+			}
+			secondNum, err := strconv.Atoi(parts[1])
+			if err != nil {
+				panic(err)
+			}
+
+			if firstNum == num {
+				orderedRules = append(orderedRules, strconv.Itoa(firstNum)+"|"+strconv.Itoa(secondNum))
+			}
+		}
+	}
+
+	return orderedRules
+}
+
+func getOrderedRuleSets(rules []string, ruleSets map[int][]int) map[int][]int {
+	firstNumsList := make([]int, 0)
+
+	for _, rule := range rules {
 		parts := strings.Split(rule, "|")
 
 		firstNum, err := strconv.Atoi(parts[0])
@@ -118,7 +209,32 @@ func main() {
 		}
 
 		ruleSets[firstNum] = append(ruleSets[firstNum], secondNum)
+		if !contains(firstNumsList, firstNum) {
+			firstNumsList = append(firstNumsList, firstNum)
+		}
 	}
+
+	orderedRuleSets := make(map[int][]int)
+
+	sort.Slice(firstNumsList, less(firstNumsList))
+
+	for _, firstNum := range firstNumsList {
+		orderedRuleSets[firstNum] = ruleSets[firstNum]
+	}
+	return orderedRuleSets
+}
+
+func main() {
+	// Part 1 - get rules
+	rules, err := ReadLines("../../input/day5-a.txt")
+	if err != nil {
+		panic(err)
+	}
+
+	ruleSets := make(map[int][]int)
+
+	orderedRules := getOrderedRules(rules)
+	orderedRuleSets := getOrderedRuleSets(rules, ruleSets)
 
 	// Part 2 - check if input lines match the rules
 	inputLines, err := ReadLines("../../input/day5-b.txt")
@@ -129,8 +245,8 @@ func main() {
 	total := 0
 
 	for _, line := range inputLines {
-		if !checkRules(line, ruleSets) {
-			fixedLine := fixLine(line, ruleSets)
+		if !checkRules(line, orderedRuleSets) {
+			fixedLine := fixLineUntilCheckRulesPasses(line, orderedRules, orderedRuleSets)
 			total += getCenterNumber(fixedLine)
 		}
 	}
@@ -139,6 +255,8 @@ func main() {
 }
 
 // 5639 too low
+// 5665 ... no
+// 6098 ... no
 // 6101 ... no
-// 6347 ?
+// 6336
 // 6422 too high

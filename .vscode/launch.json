@@ -10,7 +10,7 @@
             "console": "integratedTerminal",
             "request": "launch",
             "mode": "auto",
-            "program": "${workspaceFolder}/2024/day12/pt1",
+            "program": "${workspaceFolder}/2024/day17/pt2",
             //"envFile": "${workspaceFolder}/.env",
             "args": [],
             "buildFlags": ""

@@ -14,6 +14,7 @@ const (
 	LEFT  = 4
 )
 
+// getStartEnd finds the start (S) and end (E) positions in the maze
 func getStartEnd(s []string) (int, int, int, int) {
 	var sx, sy, ex, ey int
 	for y := 0; y < len(s); y++ {
@@ -28,6 +29,7 @@ func getStartEnd(s []string) (int, int, int, int) {
 	return sx, sy, ex, ey
 }
 
+// getMinScoreMaze calculates the minimum score to reach each tile in the maze
 func getMinScoreMaze(room []string, sx, sy int) map[string]int {
 	type Tile struct {
 		x, y, dir, score int
@@ -119,6 +121,7 @@ func getMinScoreMaze(room []string, sx, sy int) map[string]int {
 	return visited
 }
 
+// getLowerScoreMaze finds the minimum score to reach the end (E) from the start (S)
 func getLowerScoreMaze(s []string) int {
 	sx, sy, ex, ey := getStartEnd(s)
 	visitedScoredTiles := getMinScoreMaze(s, sx, sy)
@@ -138,6 +141,7 @@ func getLowerScoreMaze(s []string) int {
 	return slices.Min(endScoreValues)
 }
 
+// check recursively checks the path from the end (E) to the start (S) to find the minimum score path
 func check(room []string, sx, sy, x, y, dir, minScore int, visitedScoredTiles map[string]int, tiles map[string]struct{}) {
 	if !(x == sx && y == sy) {
 		// Start condition (from the END)
@@ -230,6 +234,7 @@ func check(room []string, sx, sy, x, y, dir, minScore int, visitedScoredTiles ma
 	}
 }
 
+// readInput reads the maze input from a file
 func readInput(fileName string) ([]string, error) {
 	file, err := os.Open(fileName)
 	if err != nil {
